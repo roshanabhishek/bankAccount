@@ -1,7 +1,4 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
-import { Link } from 'react-router-dom';
 import MUIDataTable from 'mui-datatables';
 
 import { withStyles } from '@material-ui/core/styles';
@@ -9,7 +6,6 @@ import {
   CssBaseline,
   Button,
 } from '@material-ui/core';
-import ActionCreators from '../actions';
 
 const styles = (theme) => {
   return {
@@ -22,14 +18,14 @@ const styles = (theme) => {
 
 
 const columns = [
-  {
-    name: 'Account No',
-    options: {
-      sort: true,
-      filter: true,
-      filterType: 'text',
-    },
-  },
+  // {
+  //   name: 'Account No',
+  //   options: {
+  //     sort: true,
+  //     filter: true,
+  //     filterType: 'text',
+  //   },
+  // },
   {
     name: 'Date',
     options: {
@@ -38,14 +34,15 @@ const columns = [
     },
   }, {
     name: 'Transaction Details',
+    label: 'Description',
     options: {
-      sort: false,
+      sort: true,
       filter: false,
     },
   }, {
     name: 'Value Date',
     options: {
-      sort: false,
+      sort: true,
       filter: false,
     },
   }, {
@@ -69,11 +66,12 @@ const columns = [
   },
 ];
 
-const options = {
-  filterType: 'dropdown',
-  selectableRows: 'none',
-  print: false,
-};
+const convertStringToNumber = function(value) {
+  if (value === '') {
+    return undefined;
+  };
+  return parseFloat(value.replace(/,/g, ''));
+}
 
 class Home extends Component {
   constructor(props) {
@@ -85,37 +83,61 @@ class Home extends Component {
     };
   }
 
-  componentDidMount() {
+  fetchData = () => {
     fetch("http://starlord.hackerearth.com/bankAccount")
-      .then(res => res.json())
-      .then(
-        (result) => {
-          console.log('RESULT', result);
-          this.setState({
-            isLoaded: true,
-            list: result
-          });
-        },
-        // Note: it's important to handle errors here
-        // instead of a catch() block so that we don't swallow
-        // exceptions from actual bugs in components.
-        (error) => {
-          this.setState({
-            isLoaded: true,
-            error
-          });
-        }
-      )
+    .then(res => res.json())
+    .then(
+      (result) => {
+        console.log('RESULT', result);
+        this.setState({
+          isLoaded: true,
+          list: result
+        });
+      },
+      // Note: it's important to handle errors here
+      // instead of a catch() block so that we don't swallow
+      // exceptions from actual bugs in components.
+      (error) => {
+        this.setState({
+          isLoaded: true,
+          error
+        });
+      }
+    )
+  }
+
+  componentDidMount() {
+    this.fetchData();
   }
 
   render() {
+    const options = {
+      filterType: 'dropdown',
+      selectableRows: 'none',
+      print: false,
+      customSort: (data, colIndex, order) => {
+        return data.sort((a, b) => {
+         if (colIndex === 0 || colIndex === 2) {
+            return (new Date(a.data[colIndex]) < new Date(b.data[colIndex]) ? -1: 1 ) * (order === 'desc' ? 1 : -1);
+          } else if (colIndex === 3 || colIndex === 4 || colIndex === 5) {
+            const a1 = convertStringToNumber(a.data[colIndex]);
+            const a2 = convertStringToNumber(b.data[colIndex]);
+            const careabout = order === 'desc' ? a1 : a2;
+            return ((a1 < a2) || (careabout === undefined) ? -1: 1 ) * (order === 'desc' ? 1 : -1);
+          } else { 
+            return (a.data[colIndex] < b.data[colIndex] ? -1: 1 ) * (order === 'desc' ? 1 : -1); 
+          }
+         });
+       }
+      }
+  
     const { classes } = this.props;
     return (
       <div className={classes.root}>
         <CssBaseline />
 
         <MUIDataTable
-          title="Transaction List"
+          title={`Transaction List - Account No ${this.state.list[0] && this.state.list[0]['Account No']}`}
           data={this.state.list}
           columns={columns}
           options={options}
@@ -125,13 +147,5 @@ class Home extends Component {
   }
 }
 
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(ActionCreators, dispatch);
-}
 
-function mapStateToProps(state) {
-  return {
-  };
-}
-
-export default withStyles(styles)(connect(mapStateToProps, mapDispatchToProps)(Home));
+export default withStyles(styles)(Home);
