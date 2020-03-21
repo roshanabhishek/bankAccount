@@ -122,7 +122,7 @@ class Home extends Component {
           } else if (colIndex === 3 || colIndex === 4 || colIndex === 5) {
             const a1 = convertStringToNumber(a.data[colIndex]);
             const a2 = convertStringToNumber(b.data[colIndex]);
-            const careabout = order === 'desc' ? a1 : a2;
+            const careabout = order === 'desc' ? a2 : a1;
             return ((a1 < a2) || (careabout === undefined) ? -1: 1 ) * (order === 'desc' ? 1 : -1);
           } else { 
             return (a.data[colIndex] < b.data[colIndex] ? -1: 1 ) * (order === 'desc' ? 1 : -1); 
